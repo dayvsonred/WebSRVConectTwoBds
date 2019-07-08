@@ -11,6 +11,7 @@ using System.Text;
 using System.Data.SqlClient;
 using System.Web.Configuration;
 using System.Collections;
+using System.Threading.Tasks;
 
 namespace WebSevicoConBdSQLServer.Controllers
 {
@@ -19,14 +20,73 @@ namespace WebSevicoConBdSQLServer.Controllers
     {
 
 
+        private static bool Open = true;
+
+        private string  WebAtualzado;
+
+
+
         // GET: api/authors
         [AcceptVerbs("GET")]
         [Route("INI")]
         public string INI()
         {
-
+            Open = true; 
+            WebAtualzado = "";
             return "ok rodadno" ;
         }
+
+        // GET: api/authors
+        [AcceptVerbs("GET")]
+        [Route("FIM")]
+        public string FIM()
+        {
+            Open = false;
+            return "parado rodadno" + Open.ToString();
+        }
+
+
+        // GET: api/authors
+        [AcceptVerbs("GET")]
+        [Route("PG")]
+        public string PG()
+        {
+            return WebAtualzado;
+        }
+
+        // GET: api/authors
+        [AcceptVerbs("GET")]
+        [Route("PGOPEN")]
+        public async Task <IHttpActionResult> PGOPEN()
+        {
+
+            var httpContext = Request.Properties["MS_HttpContext"] as HttpContextBase;
+            //if (Open)
+                //await EnviarNoticias();
+               
+
+            return Ok<string>(WebAtualzado);
+        }
+
+        // GET: api/authors
+        [AcceptVerbs("GET")]
+        [Route("PGOPEN2")]
+        public string PGOPEN2()
+        {
+
+            //var httpContext = Request.Properties["MS_HttpContext"] as HttpContextBase;
+            //if (Open)
+            EnviarNoticias();
+
+            return "exe ini ok = " +  WebAtualzado;
+        }
+
+
+
+
+
+
+
 
         [AcceptVerbs("GET","POST")]
         [Route("RotJson")]
@@ -177,6 +237,34 @@ namespace WebSevicoConBdSQLServer.Controllers
         }
 
 
+
+        private async Task EnviarNoticias()
+        {
+            WebAtualzado = "veio aq";
+
+            while (true)
+            {
+                 Task.Delay(2000);
+                DateTime thisDay = DateTime.Now;
+
+                //if (Open)
+                //{
+                System.Diagnostics.Debug.WriteLine("---------------"); System.Diagnostics.Debug.WriteLine("---------------"); System.Diagnostics.Debug.WriteLine("---------------");
+                System.Diagnostics.Debug.WriteLine(thisDay.ToString());
+
+                SetTime(thisDay.ToString());
+
+
+                // }
+            }
+        }
+
+
+        private async Task SetTime(string timeString)
+        {
+             WebAtualzado = " PROG " + timeString;
+            System.Diagnostics.Debug.WriteLine("++++++++++++++++++++++++++++++");
+        }
     }
 
     public class Item
