@@ -23,9 +23,7 @@ namespace WebSevicoConBdSQLServer.Controllers
         private static bool Open = true;
 
         private string  WebAtualzado;
-
-
-
+         
         // GET: api/authors
         [AcceptVerbs("GET")]
         [Route("INI")]
@@ -81,13 +79,7 @@ namespace WebSevicoConBdSQLServer.Controllers
             return "exe ini ok = " +  WebAtualzado;
         }
 
-
-
-
-
-
-
-
+         
         [AcceptVerbs("GET","POST")]
         [Route("RotJson")]
         public HttpResponseMessage RotJson()
@@ -238,6 +230,154 @@ namespace WebSevicoConBdSQLServer.Controllers
 
 
 
+        // GET  
+        [AcceptVerbs("GET")]
+        [Route("STATRT_PRG")]
+        public async Task<JsonResult<IList>> STATRT_PRG()
+        {
+
+            IList resultado = new ArrayList();
+
+            int NOVOITEM = await ExiteNovo();
+            //dynamic jsonRetorno = Json("STATRT_PRG json rest  = " + NOVOITEM);
+            
+            if (NOVOITEM > 0)
+            {
+                 IList ITEMS = await GetItensNovos();
+                 
+                foreach (TBL_Regitros element in ITEMS)
+                { 
+                    System.Diagnostics.Debug.WriteLine(element.Name.ToString() );
+                    resultado.Add(element);
+                    //insere no bd
+                    int itemInsert = await SetItens(element.Id, element.Name.ToString(),element.Car.ToString(),element.Name.ToString(),"v");
+                    //seinsert update
+                    if (itemInsert > 0)
+                    {
+                        // UpdateItems(element.Id);
+                    }
+                }
+
+                
+                return Json(resultado);
+                
+            }
+            else
+            {
+                var jsonRes = new MSG() { mensagem = "json rest ok" };
+                resultado.Add(jsonRes);
+                return Json(resultado);
+            }
+             
+            
+           
+        }
+
+
+        //conta numero de intens novos
+        private async Task<int> ExiteNovo(){ 
+            int retorno = 0; 
+            try
+            { 
+                string sql = null;
+                sql = "select  COUNT(*) as NUM from TODOS.dbo.REGISTROS where status = 'nv';";
+                SqlCommand command;
+                SqlDataReader dataReader; 
+                using (SqlConnection connection = new SqlConnection(WebConfigurationManager.ConnectionStrings["ConnStringDb1"].ConnectionString))
+                {
+                    connection.Open();   
+                    command = new SqlCommand(sql, connection);
+                    dataReader = command.ExecuteReader();
+                    while (dataReader.Read())
+                    {
+                        //System.Diagnostics.Debug.WriteLine(dataReader.GetValue(0));
+                        DateTime thisDay = DateTime.Now;
+                        retorno = Convert.ToInt32(dataReader.GetValue(0));
+                    }
+                    dataReader.Close();
+                    command.Dispose();
+                    connection.Close();
+                }
+            }
+            catch (SqlException e)
+            { 
+                Console.WriteLine(e.ToString());
+            } 
+            return retorno;  
+        }
+
+
+        private async Task<IList> GetItensNovos()
+        {
+            ArrayList resultado = new ArrayList();
+            try
+            {
+                string sql = null;
+                sql = "select  * from TODOS.dbo.REGISTROS where status = 'nv';";
+                SqlCommand command;
+                SqlDataReader dataReader;
+                using (SqlConnection connection = new SqlConnection(WebConfigurationManager.ConnectionStrings["ConnStringDb1"].ConnectionString))
+                {
+                    connection.Open();
+                    command = new SqlCommand(sql, connection);
+                    dataReader = command.ExecuteReader();
+                    while (dataReader.Read())
+                    {
+                        System.Diagnostics.Debug.WriteLine(dataReader.GetValue(0));
+                        DateTime thisDay = DateTime.Now; 
+
+                        var itemID = dataReader.GetValue(0).ToString();
+                        var itemNoome = dataReader.GetValue(1).ToString();
+                        var itemCarr = dataReader.GetValue(2).ToString();
+                        var agora = thisDay.ToString();
+                        var RegintroString = new TBL_Regitros() { Id = Convert.ToInt32(itemID), Name = itemNoome, Car = itemCarr, Agora = agora };
+                        resultado.Add(RegintroString);
+                    }
+                    dataReader.Close();
+                    command.Dispose();
+                    connection.Close();
+                }
+            }
+            catch (SqlException e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            //var jsonRes = Json(resultado);
+            return resultado;
+        }
+
+        private async Task<int> SetItens(int val00, string val01, string val02,string val03, string val04)
+        {
+            int resultado = 0;
+            try
+            {
+                string sql = null;
+                sql = @" INSERT INTO[dbo].[REGISTROS] VALUES (" + val00 + "  ,'" + val01 + "' ,'" + val02 + "' ,'" + val03 + "' ,'" + val04 + "')";
+                SqlCommand command; 
+                using (SqlConnection connection = new SqlConnection(WebConfigurationManager.ConnectionStrings["ConnStringDb1"].ConnectionString))
+                {
+                    connection.Open();
+                    command = new SqlCommand(sql, connection);
+                    resultado = 0;
+                    try {
+                        resultado = command.ExecuteNonQuery();
+
+                    } catch {
+                        resultado = 0;
+                    } 
+                    command.Dispose();
+                    connection.Close();
+                }
+            }
+            catch (SqlException e)
+            {
+                Console.WriteLine(e.ToString());
+            } 
+            return resultado;
+        }
+
+
+
         private async Task EnviarNoticias()
         {
             WebAtualzado = "veio aq";
@@ -260,6 +400,8 @@ namespace WebSevicoConBdSQLServer.Controllers
         }
 
 
+
+
         private async Task SetTime(string timeString)
         {
              WebAtualzado = " PROG " + timeString;
@@ -280,4 +422,16 @@ namespace WebSevicoConBdSQLServer.Controllers
         public string Car { get; set; }
         public string Agora { get; set; }
     }
+
+    public class ItemNovo
+    {
+        public int Num { get; set; } 
+    }
+
+    public class MSG
+    {
+        public string mensagem { get; set; }
+    }
+
+
 }
